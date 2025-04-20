@@ -9,53 +9,47 @@ function moveFiles() {
     console.error('Enter 2 arguments');
 
     return;
-  } else if (!fs.existsSync(args[0])) {
+  }
+
+  const source = args[0];
+  const destination = args[1];
+
+  if (!fs.existsSync(source)) {
     console.error('Non-existing source file!');
 
     return;
   }
 
-  if (args[0] === args[1]) {
+  if (source === destination) {
     console.log('Source and destination are the same, doing nothing.');
 
     return;
   }
 
-  const destPath = path.resolve(args[1]);
+  const destPath = path.resolve(destination);
+  const sourceName = path.basename(source);
 
-  function rewrite(fileName = '') {
-    const content = fs.readFileSync(args[0], 'utf-8');
-    const outputPath = path.join(destPath, fileName);
+  function rewrite(toPath) {
+    const content = fs.readFileSync(source, 'utf-8');
 
-    fs.writeFileSync(outputPath, content);
-    fs.rmSync(args[0]);
+    fs.writeFileSync(toPath, content);
+    fs.rmSync(source);
   }
 
-  // Якщо призначення є директорією
-  if (args[1].endsWith('/')) {
-    if (!fs.existsSync(destPath)) {
-      console.error('Non-existing directory!');
+  if (fs.existsSync(destPath) && fs.statSync(destPath).isDirectory()) {
+    const target = path.join(destPath, sourceName);
 
-      return;
-    }
-    rewrite(path.basename(args[0]));
-  } else if (fs.existsSync(destPath) && fs.statSync(destPath).isDirectory()) {
-    rewrite(path.basename(args[0]));
-  } else if (path.dirname(args[1]) === '.') {
-    fs.renameSync(args[0], args[1]);
+    rewrite(target);
+
+    return;
+  }
+
+  const parentDir = path.dirname(destPath);
+
+  if (fs.existsSync(parentDir)) {
+    rewrite(destPath);
   } else {
-    const parentDir = path.dirname(destPath);
-
-    if (!fs.existsSync(parentDir)) {
-      console.error('Non-existing parent directory!');
-
-      return;
-    }
-
-    const content = fs.readFileSync(args[0], 'utf-8');
-
-    fs.writeFileSync(destPath, content);
-    fs.rmSync(args[0]);
+    console.error('Non-existing parent directory!');
   }
 }
 
